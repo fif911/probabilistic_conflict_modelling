@@ -1,0 +1,25 @@
+# ignore pickles and other files:
+*.p
+*.pyc
+*/.DS_Store
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+.vscode
+__pycache__
+*.log
+.idea
+/figures/*
+
+# ignore ALL files in ANY directory named:
+memos/
+exploration_pickle/
+Untitled.ipynb 
+
+#*.csv
+#*.pdf
+#*.parquet
+.DS_Store
+submission/readme.txt
+
+# ignore this irrelevant HH file...
+Data_for_Idris.ipynb
