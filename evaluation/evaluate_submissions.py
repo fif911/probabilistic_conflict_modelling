@@ -1,7 +1,7 @@
 #  python evaluate_submissions.py -s ./submission -a ./actuals -e 1000 -t cm
 from pathlib import Path
 from CompetitionEvaluation import structure_data, calculate_metrics
-from utilities import list_submissions, get_target_data, TargetType
+from utilities.views_utils import list_submissions, get_target_data, TargetType
 import os
 import xarray
 import numpy as np
@@ -61,8 +61,9 @@ def evaluate_forecast(
         predictions["outcome"] = xarray.where(
             predictions["outcome"] > 10e9, 10e9, predictions["outcome"]
         )
+    # TODO: This might be needed. Depends on which version is used!
     # rename ged_sb to outcome
-    observed = observed.rename_vars({"ged_sb": "outcome"})
+    # observed = observed.rename_vars({"ged_sb": "outcome"})
     crps = calculate_metrics(
         observed, predictions, metric="crps", aggregate_over="nothing"
     )
