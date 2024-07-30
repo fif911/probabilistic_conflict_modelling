@@ -1,4 +1,8 @@
-#  python evaluate_submissions.py -s ./submission -a ./actuals -e 1000 -t cm
+# python evaluate_submissions.py -s ../submission -a ../actuals -e 1000 -t cm
+# or
+# python evaluation/evaluate_submissions.py -s ./submission -a ./actuals -e 1000 -t cm
+# depends on where you are running the script from
+
 from pathlib import Path
 from CompetitionEvaluation import structure_data, calculate_metrics
 from utilities.views_utils import list_submissions, get_target_data, TargetType
