@@ -1,5 +1,6 @@
 # ignore pickles and other files:
-*.p
+venv
+# *.p
 *.pyc
 */.DS_Store
 .ipynb_checkpoints
@@ -8,7 +9,9 @@
 __pycache__
 *.log
 .idea
-/figures/*
+figures/*
+model_cache/*
+submission/ng_boost_*
 
 # ignore ALL files in ANY directory named:
 memos/
@@ -23,3 +26,4 @@ submission/readme.txt
 
 # ignore this irrelevant HH file...
 Data_for_Idris.ipynb
+

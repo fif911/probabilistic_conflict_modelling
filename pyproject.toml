@@ -5,6 +5,7 @@ authors = ["Oleksandr Zakotianskyi"]
 description = "Probabilistic Conflict Modelling project"
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "~3.10"
@@ -33,6 +34,9 @@ torch = "^2.2.1"
 shap = "^0.45.0"
 ngboost = "^0.5.1"
 crps = "^2.0.4"
+pre-commit = "^3.8.0"
+black = "^24.8.0"
+jupytext = "^1.16.4"
 
 [build-system]
 requires = ["poetry-core"]

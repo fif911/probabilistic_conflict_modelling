@@ -16,3 +16,36 @@ a reference against which future improvements can be evaluated.
 
 The report with details is
 available [here](https://drive.google.com/file/d/1r63S5BRPRl8G2HuTjyWtFpOxvVNsNV7o/view?usp=sharing).
+
+## Model
+
+The NGBoost model code is stored in the model folder in two representations: `.py` and `.ipynb`. Simply run the script,
+and it will produce plots along with submission files.
+
+## Model Evaluation
+
+The model is evaluated using `evaluate_submissions.py` file, and the aggregated statistics about the model can be
+gathered via `compare_submissions.ipynb`.
+
+## Development
+
+### Set up environment
+
+Set up the environment using poetry by running the following command:
+
+```bash
+poetry install
+```
+
+### Install pre-commit hooks
+
+Run the following command to install pre-commit hooks:
+
+```bash
+pre-commit install
+```
+
+Ensure that you have the following dependencies installed:
+
+1) black (for formatting)
+2) jupiter (for removing output from notebooks)

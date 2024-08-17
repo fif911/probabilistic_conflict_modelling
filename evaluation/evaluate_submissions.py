@@ -292,7 +292,7 @@ def main():
         nargs="+",
         type=str,
         help="windows to evaluate",
-        default=["Y2018", "Y2019", "Y2020", "Y2021", "Y2022"],
+        default=["Y2018", "Y2019", "Y2020", "Y2021", "Y2022", "Y2023"],
     )
     parser.add_argument(
         "-e", metavar="expected", type=int, help="expected samples", default=1000
@@ -341,3 +341,4 @@ def main():
 if __name__ == "__main__":
     print("---- Running main ----\n")
     main()
+    print("Done!")
