@@ -23,3 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Migrated to the most recent version of `cm_features` published by ViEWS.
+
+## [1.1] - 2023-08-31
+
+### Added
+
+- Support for 2024 year.
+- Bash scripts for running data preprocessing pipeline and syncing Jupyter notebooks with Python files.
+
+### Changed
+
+- Bugfixes for line plots logic to ensure correct conversion of values in case log transform flag is on.
+- Structure of the NGBoost model to simplify handling for 2024

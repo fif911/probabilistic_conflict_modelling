@@ -6,10 +6,6 @@
 #       format_name: light
 #       format_version: '1.5'
 #       jupytext_version: 1.16.4
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
 # ---
 
 import numpy as np
@@ -29,7 +25,7 @@ cm_features_reduced = cm_features.drop(columns=vdem_columns)
 scaler = StandardScaler()
 vdem_columns_centered = scaler.fit_transform(vdem_columns)
 
-pca = PCA()
+pca = PCA(random_state=42)
 pca.fit(vdem_columns_centered)
 
 cumulative_explained_variance = np.cumsum(pca.explained_variance_ratio_)

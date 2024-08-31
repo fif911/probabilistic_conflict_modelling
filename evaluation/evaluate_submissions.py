@@ -6,6 +6,7 @@
 from pathlib import Path
 from CompetitionEvaluation import structure_data, calculate_metrics
 from utilities.views_utils import list_submissions, get_target_data, TargetType
+
 import os
 import xarray
 import numpy as np
@@ -16,35 +17,27 @@ import pandas as pd
 import pyarrow
 
 
-# import logging
-#
-# logging.getLogger(__name__)
-# logging.basicConfig(
-#     filename="evaluate_submission.log", encoding="utf-8", level=logging.DEBUG
-# )
-
-
 def evaluate_forecast(
-        forecast: pd.DataFrame,
-        actuals: pd.DataFrame,
-        target: TargetType,
-        expected_samples: int,
-        save_to: str | os.PathLike,
-        draw_column: str = "draw",
-        data_column: str = "outcome",
-        bins: list[float] = [
-            0,
-            0.5,
-            2.5,
-            5.5,
-            10.5,
-            25.5,
-            50.5,
-            100.5,
-            250.5,
-            500.5,
-            1000.5,
-        ],
+    forecast: pd.DataFrame,
+    actuals: pd.DataFrame,
+    target: TargetType,
+    expected_samples: int,
+    save_to: str | os.PathLike,
+    draw_column: str = "draw",
+    data_column: str = "outcome",
+    bins: list[float] = [
+        0,
+        0.5,
+        2.5,
+        5.5,
+        10.5,
+        25.5,
+        50.5,
+        100.5,
+        250.5,
+        500.5,
+        1000.5,
+    ],
 ) -> None:
     if target == "pgm":
         unit = "priogrid_gid"
@@ -123,7 +116,7 @@ def evaluate_forecast(
 
 
 def match_forecast_with_actuals(
-        submission, actuals_folder, target: TargetType, window: str
+    submission, actuals_folder, target: TargetType, window: str
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     print(f"Matching {submission} with {actuals_folder}")
     filter = pyarrow.compute.field("window") == window
@@ -136,18 +129,31 @@ def match_forecast_with_actuals(
     predictions.drop(columns=["window"], inplace=True)
     actuals.drop(columns=["window"], inplace=True)
 
+    if window == "Y2024":
+        # If the window is Y2024, we only want to evaluate the predictions up to the last month in the actuals.
+        predictions = predictions.reset_index(drop=False, inplace=False)
+        last_month_id = actuals.reset_index(drop=False, inplace=False)[
+            "month_id"
+        ].unique()[-1]
+        predictions = predictions[predictions["month_id"] <= last_month_id]
+
+        # set index in predictions the same as it was
+        predictions.set_index(
+            ["month_id", "country_id", "draw"], inplace=True, drop=True
+        )
+
     return actuals, predictions
 
 
 def evaluate_submission(
-        submission: str | os.PathLike,
-        acutals: str | os.PathLike,
-        targets: list[TargetType],
-        windows: list[str],
-        expected: int,
-        bins: list[float],
-        draw_column: str = "draw",
-        data_column: str = "outcome",
+    submission: str | os.PathLike,
+    acutals: str | os.PathLike,
+    targets: list[TargetType],
+    windows: list[str],
+    expected: int,
+    bins: list[float],
+    draw_column: str = "draw",
+    data_column: str = "outcome",
 ) -> None:
     """Loops over all targets and windows in a submission folder, match them with the correct test dataset, and estimates evaluation metrics.
     Stores evaluation data as .parquet files in {submission}/eval/{target}/window={window}/.
@@ -176,22 +182,30 @@ def evaluate_submission(
     all_folders = list(submission.glob("cm/*"))
     for target in targets:
         for window in windows:
-            folder_exists = any("window=" + window in str(folder) for folder in all_folders)
+            folder_exists = any(
+                "window=" + window in str(folder) for folder in all_folders
+            )
             if not folder_exists:
-                print(f"Window {window} not found in {submission}. Skipping evaluation.")
+                print(
+                    f"Window {window} not found in {submission}. Skipping evaluation."
+                )
                 continue
             print(f"Target: {target}, Window: {window}")
 
             if any(
-                    (submission / target).glob("**/*.parquet")
+                (submission / target).glob("**/*.parquet")
             ):  # test if there are prediction files in the target
                 print(f"Found .parquet files in {submission / target}. Evaluating.")
                 observed_df, pred_df = match_forecast_with_actuals(
                     submission, acutals, target, window
                 )
-                print(f"Matched {submission / target} with {acutals / target}/window={window}")
+                print(
+                    f"Matched {submission / target} with {acutals / target}/window={window}"
+                )
                 save_to = submission / "eval" / f"{target}" / f"window={window}"
                 print("Saving to", save_to)
+                if window == "Y2024":
+                    print("Processing submission for 2024")
                 evaluate_forecast(
                     forecast=pred_df,
                     actuals=observed_df,
@@ -210,14 +224,14 @@ def evaluate_submission(
 
 
 def evaluate_all_submissions(
-        submissions: str | os.PathLike,
-        acutals: str | os.PathLike,
-        targets: list[TargetType],
-        windows: list[str],
-        expected: int,
-        bins: list[float],
-        draw_column: str = "draw",
-        data_column: str = "outcome",
+    submissions: str | os.PathLike,
+    acutals: str | os.PathLike,
+    targets: list[TargetType],
+    windows: list[str],
+    expected: int,
+    bins: list[float],
+    draw_column: str = "draw",
+    data_column: str = "outcome",
 ) -> None:
     """Loops over all submissions in the submissions folder, match them with the correct test dataset, and estimates evaluation metrics.
     Stores evaluation data as .parquet files in {submissions}/{submission_name}/eval/{target}/window={window}/.
@@ -292,8 +306,9 @@ def main():
         nargs="+",
         type=str,
         help="windows to evaluate",
-        default=["Y2018", "Y2019", "Y2020", "Y2021", "Y2022", "Y2023"],
+        default=["Y2018", "Y2019", "Y2020", "Y2021", "Y2022", "Y2023", "Y2024"],
     )
+
     parser.add_argument(
         "-e", metavar="expected", type=int, help="expected samples", default=1000
     )
@@ -333,8 +348,14 @@ def main():
     bins = args.ib
 
     evaluate_all_submissions(
-        submissions=submissions, acutals=acutals, targets=targets, windows=windows, expected=expected, bins=bins,
-        draw_column=draw_column, data_column=data_column
+        submissions=submissions,
+        acutals=acutals,
+        targets=targets,
+        windows=windows,
+        expected=expected,
+        bins=bins,
+        draw_column=draw_column,
+        data_column=data_column,
     )
 
 
