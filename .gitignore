@@ -6,12 +6,13 @@ venv
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 .vscode
+.virtual_documents
 __pycache__
 *.log
 .idea
 figures/*
 model_cache/*
-submission/ng_boost_*
+model/*.ipynb
 
 # ignore ALL files in ANY directory named:
 memos/
@@ -23,6 +24,7 @@ Untitled.ipynb
 #*.parquet
 .DS_Store
 submission/readme.txt
+submission/ng_boost*
 
 # ignore this irrelevant HH file...
 Data_for_Idris.ipynb

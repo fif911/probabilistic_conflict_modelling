@@ -79,3 +79,23 @@ Run the following command to execute the bash script:
 ```bash
 ./[file].sh [args]
 ```
+
+#### Generate jupyter notebooks based on .py files
+
+Run the following command to generate jupyter notebook:
+
+```bash
+jupytext --to ipynb [file_name].py
+```
+
+Run the following command to turn jupyter notebook into a paired ipynb/py notebook:
+
+```bash
+jupytext --set-formats ipynb,py [file_name].ipynb
+```
+
+Run the following command to syncronize the jupyter notebook with changes in python file:
+
+```bash
+jupytext --sync [file_name].ipynb
+```
