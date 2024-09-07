@@ -119,6 +119,7 @@ os.makedirs(f"{figures_prefix}/force_plots", exist_ok=True)
 os.makedirs(f"{figures_prefix}/histograms", exist_ok=True)
 os.makedirs(f"{figures_prefix}/line_plots", exist_ok=True)
 os.makedirs(f"{figures_prefix}/cut_comparison_histograms", exist_ok=True)
+os.makedirs(f"{figures_prefix}/pie_charts", exist_ok=True)
 os.makedirs(f"{model_cache_prefix}", exist_ok=True)
 
 # # Data
@@ -226,7 +227,7 @@ X_test, y_test = data_splitting_service.x_y_split(test_df, target)
 model_files: list[str] | None = model_caching_service.search_model_cache(
     model_cache_prefix
 )
-cached_model_available = model_files is not None
+cached_model_available = bool(model_files)
 print(f"Cached model available: {cached_model_available}")
 
 if USE_CACHED_MODEL and cached_model_available:
@@ -403,6 +404,13 @@ feature_importance_scale = pd.DataFrame(
 # -
 
 if SHOW_PLOTS or SAVE_FIGURES:
+    plotting_service.plot_pie_charts(
+        other_min_variance=0.035,
+        feature_importance=feature_importance_loc,
+        show_plots=SHOW_PLOTS,
+        save_figures=SAVE_FIGURES,
+        directory=f"{figures_prefix}/pie_charts",
+    )
     explainer = shap.TreeExplainer(
         ngb, model_output=0
     )  # use model_output = 1 for scale trees

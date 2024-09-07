@@ -3,13 +3,13 @@ import glob
 import pickle
 from datetime import datetime
 from utilities.types import Model
+from pathlib import Path
 
 
 class ModelCachingService:
     def search_model_cache(self, directory: str) -> list[str] | None:
-        model_files: list[str] = glob.glob(f"{directory}/model_*.p")
-
-        return model_files if len(model_files) != 0 else None
+        model_files: list[str] = list(Path(directory).glob("model_*.p"))
+        return model_files
 
     def cache_model(self, model: Model, directory: str) -> None:
         model_files: list[str] | None = self.search_model_cache(directory)
@@ -22,8 +22,8 @@ class ModelCachingService:
         model_path: str = (
             f"{directory}/"
             "model_"
-            f"{time.day}.{time.month}.{time.year}_"
-            f"{time.hour}:{time.minute:02}"
+            f"{time.day}_{time.month}_{time.year}_"
+            f"{time.hour}_{time.minute:02}"
             ".p"
         )
 

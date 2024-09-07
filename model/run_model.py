@@ -36,7 +36,7 @@ PREDICTION_YEARS: list[int] = [2021, 2022, 2023]
 CM_FEATURES_VERSION: str = "2.5"
 PREDICTION_WINDOW: int = 14
 
-SHOW_PLOTS: bool = False
+SHOW_PLOTS: bool = True
 PLOT_STD: bool = True
 SAVE_FIGURES: bool = True
 USE_CACHED_MODEL: bool = True
@@ -120,7 +120,7 @@ def sub_run(prediction_year, optuna, run_config, model_config, base_learner_conf
         os.makedirs(f"{figures_prefix}/line_plots", exist_ok=True)
         os.makedirs(f"{figures_prefix}/cut_comparison_histograms", exist_ok=True)
         os.makedirs(f"{model_cache_prefix}", exist_ok=True)
-
+        os.makedirs(f"{figures_prefix}/pie_charts", exist_ok=True)
     # ---------------- Data ----------------
     cm_features, target = data_reading_service.read_features(
         prediction_year, CM_FEATURES_VERSION, PREDICTION_WINDOW, "../data"
@@ -151,7 +151,7 @@ def sub_run(prediction_year, optuna, run_config, model_config, base_learner_conf
         model_files: list[str] | None = model_caching_service.search_model_cache(
             model_cache_prefix
         )
-        cached_model_available = model_files is not None
+        cached_model_available = bool(model_files)
         print(f"Cached model available: {cached_model_available}")
 
     if not optuna and USE_CACHED_MODEL and cached_model_available:
@@ -219,6 +219,10 @@ def sub_run(prediction_year, optuna, run_config, model_config, base_learner_conf
         train_df["month_id"] = train_df_popped_cols["month_id"]
 
     test_df_new = pd.concat([test_df, pd.DataFrame(sampled_dist)], axis=1)
+    feature_importance_loc = ngb.feature_importances_[0]
+    feature_importance_loc = pd.DataFrame(
+        feature_importance_loc, index=X_train.columns, columns=["importance"]
+    ).sort_values(by="importance", ascending=False)
 
     # ---------------- Submission ----------------
     if PLOT_STD:
@@ -254,6 +258,15 @@ def sub_run(prediction_year, optuna, run_config, model_config, base_learner_conf
         )
     # ---------------- Plots ----------------
     if SHOW_PLOTS or SAVE_FIGURES:
+        # -------- Pie chart
+        plotting_service.plot_pie_charts(
+            other_min_variance=0.035,
+            feature_importance=feature_importance_loc,
+            show_plots=SHOW_PLOTS,
+            save_figures=SAVE_FIGURES,
+            path=f"{figures_prefix}/pie_charts.png",
+        )
+
         explainer = shap.TreeExplainer(
             ngb, model_output=0
         )  # use model_output = 1 for scale trees
@@ -496,7 +509,9 @@ def objective(trial: optuna.Trial):
 if __name__ == "__main__":
     if OPTUNA:
         # Minimize every model's score
-        study = optuna.create_study(directions=["minimize" for _ in range(len(PREDICTION_YEARS))])
+        study = optuna.create_study(
+            directions=["minimize" for _ in range(len(PREDICTION_YEARS))]
+        )
         study.optimize(objective, n_jobs=1, n_trials=6)
 
         for trial in study.best_trials:
@@ -506,4 +521,6 @@ if __name__ == "__main__":
 
         print("-" * 64)
     else:
-        run(False, default_run_config, default_model_config, default_base_learner_config)
+        run(
+            False, default_run_config, default_model_config, default_base_learner_config
+        )

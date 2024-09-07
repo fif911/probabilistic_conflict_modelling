@@ -37,6 +37,7 @@ crps = "^2.0.4"
 pre-commit = "^3.8.0"
 black = "^24.8.0"
 jupytext = "^1.16.4"
+optuna = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core"]

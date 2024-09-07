@@ -287,7 +287,7 @@ class PlottingService:
         directory: str,
     ) -> None:
         plt.rcParams.update({"font.size": 10})
-        
+
         for country_name in countries:
             indexes_for_country: list[int] = initial_data.loc[
                 initial_data["country_name"].str.contains(country_name), ::
@@ -560,6 +560,187 @@ class PlottingService:
             plt.savefig(
                 f'{directory}/histograms_{metadata["country_name"]}_{formatted_date}.png'
             )
+
+        if show_plots:
+            plt.show()
+        else:
+            plt.close("all")
+
+    def _get_columns_and_modify_list(self, column_prefix, data: list[str]):
+        columns = [col for col in data if col.startswith(column_prefix)]
+        data = [col for col in data if col not in columns]
+        return columns, data
+
+    def plot_pie_charts(
+        self,
+        feature_importance: pd.DataFrame,
+        other_min_variance: float,
+        show_plots: bool,
+        save_figures: bool,
+        directory: str,
+    ) -> None:
+
+        # --- creating columns
+        feat_import_columns = feature_importance.reset_index()["index"].tolist()
+        wdi_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "wdi_", feat_import_columns
+        )
+        vdem_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "vdem_", feat_import_columns
+        )
+        ged_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "ged_", feat_import_columns
+        )
+        acled_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "acled_", feat_import_columns
+        )
+        decay_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "decay_", feat_import_columns
+        )
+        region_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "region", feat_import_columns
+        )
+        country_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "country_id_", feat_import_columns
+        )
+        splag_columns, feat_import_columns = self._get_columns_and_modify_list(
+            "splag_", feat_import_columns
+        )
+        other_columns = feat_import_columns
+        # creating categories
+
+        categories = {
+            "WDI": feature_importance.loc[wdi_columns, "importance"].sum(),
+            "VDEM": feature_importance.loc[vdem_columns, "importance"].sum(),
+            "GED": feature_importance.loc[ged_columns, "importance"].sum(),
+            "ACLED": feature_importance.loc[acled_columns, "importance"].sum(),
+            "Decay": feature_importance.loc[decay_columns, "importance"].sum(),
+            "Region": feature_importance.loc[region_columns, "importance"].sum(),
+            "Country": feature_importance.loc[country_columns, "importance"].sum(),
+            "Splag": feature_importance.loc[splag_columns, "importance"].sum(),
+            "Misc": feature_importance.loc[other_columns, "importance"].sum(),
+        }
+
+        # Group categories that contribute less than 3% into "Other"
+        total_importance = sum(categories.values())
+        grouped_categories = {}
+        other_categories = {}
+
+        for category, importance in categories.items():
+            if (importance / total_importance) < other_min_variance:
+                other_categories[category] = importance
+            else:
+                grouped_categories[category] = importance
+
+        # Add the grouped "Other" category
+        if other_categories:
+            grouped_categories["Other"] = sum(other_categories.values())
+
+        grouped_categories = dict(
+            sorted(grouped_categories.items(), key=lambda item: item[1], reverse=True)
+        )
+
+        # Sort the other_categories by importance in descending order
+        other_categories = dict(
+            sorted(other_categories.items(), key=lambda item: item[1], reverse=True)
+        )
+
+        # Prepare legend labels for pie chart
+        legend_labels_pie = [
+            f"{cat}: {imp / total_importance:.1%}"
+            for cat, imp in grouped_categories.items()
+        ]
+
+        # Figure and axis setup
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+        fig.subplots_adjust(wspace=0)
+
+        # Pie chart parameters
+        explode = [0.1 if cat == "Other" else 0 for cat in grouped_categories.keys()]
+        angle = -180 * list(grouped_categories.values())[0] / total_importance
+        wedges, texts, autotexts = ax1.pie(
+            grouped_categories.values(),
+            autopct="%1.1f%%",
+            startangle=angle,
+            labels=grouped_categories.keys(),
+            explode=explode,
+        )
+
+        # Styling the pie chart
+        for wedge in wedges:
+            wedge.set_edgecolor("white")
+
+        # Add legend for pie chart
+        ax1.legend(
+            wedges,
+            legend_labels_pie,
+            title="Categories",
+            loc="upper right",
+            bbox_to_anchor=(1.3, 1),
+        )
+
+        # Get the color of the "Other" category
+        other_color = None
+        for i, label in enumerate(grouped_categories.keys()):
+            if label == "Other":
+                other_color = wedges[i].get_facecolor()
+                break
+
+        # Bar chart for "Other" category if it exists
+        if "Other" in grouped_categories:
+            other_ratios = [
+                imp / grouped_categories["Other"] for imp in other_categories.values()
+            ]
+            bottom = 1
+            width = 0.2
+
+            # Adding from the top matches the legend.
+            for j, (orig_imp, height, label) in enumerate(
+                [*zip(other_categories.values(), other_ratios, other_categories.keys())]
+            ):
+                print(j, orig_imp, height, label)
+                bottom -= height
+                alpha_value = 1 - max(
+                    0.1, min(1, 0.2 + 0.15 * j)
+                )  # Ensure alpha stays within 0-1 range
+
+                # Use the dynamically retrieved color for the "Other" category
+                bc = ax2.bar(
+                    0,
+                    height,
+                    width,
+                    bottom=bottom,
+                    color=other_color,
+                    label=label,
+                    alpha=alpha_value,
+                )
+                ax2.bar_label(bc, labels=[f"{orig_imp:.2%}"], label_type="center")
+
+            # Prepare legend labels for bar chart
+            legend_labels_bar = [
+                f"{cat}: {imp:.2%}" for cat, imp in other_categories.items()
+            ]
+
+            ax2.set_title(
+                f'Breakdown of "Other" Category (total of {grouped_categories["Other"]:.1%})'
+            )
+            ax2.legend(
+                legend_labels_bar,
+                title="Other Breakdown",
+                loc="upper right",
+                bbox_to_anchor=(1.3, 1),
+            )
+            ax2.axis("off")
+            ax2.set_xlim(-2.5 * width, 2.5 * width)
+
+        plt.suptitle(
+            "Feature Importance Contribution by Dataset Category",
+            fontsize=16,
+            fontweight="bold",
+        )
+
+        if save_figures:
+            plt.savefig(f"{directory}/feature_importance_pie_charts.png")
 
         if show_plots:
             plt.show()
